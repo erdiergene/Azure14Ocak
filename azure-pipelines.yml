@@ -30,30 +30,72 @@ steps:
 - checkout: self
 
 
-- task: swellaby.mirror-git-repository.mirror-git-repository-vsts-task.mirror-git-repository-vsts-task@1
-  displayName: 'Mirror Git Repository to https://dev.azure.com/erdieergene/_git/Azure14Ocak'
-  inputs:
-    sourceGitRepositoryPersonalAccessToken: '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'
-    sourceGitRepositoryCloneDirectoryName: master
-    destinationGitRepositoryUri: 'https://dev.azure.com/erdieergene/_git/Azure14Ocak'
-    destinationGitRepositoryPersonalAccessToken: 7q6srewoysy3mhez5owurmlmv7ti7koyxmcgpuju6deul2jqng6q
+#- task: swellaby.mirror-git-repository.mirror-git-repository-vsts-task.mirror-git-repository-vsts-task@1
+#  displayName: 'Mirror Git Repository to https://dev.azure.com/erdieergene/_git/Azure14Ocak'
+#  inputs:
+#    sourceGitRepositoryPersonalAccessToken: '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'
+#    sourceGitRepositoryCloneDirectoryName: master
+#    destinationGitRepositoryUri: 'https://dev.azure.com/erdieergene/_git/Azure14Ocak'
+#    destinationGitRepositoryPersonalAccessToken: 7q6srewoysy3mhez5owurmlmv7ti7koyxmcgpuju6deul2jqng6q
 
-- task: Xcode@5
-  inputs:
-    actions: 'build'
-    scheme: $(buildScheme)
-    sdk: $(buildSdk)
-    configuration: $(buildConfiguration)
-    xcWorkspacePath: $(workspacePath)
-    xcodeVersion: $(xcodeVer)
 
-- task: Xcode@5
+# Contact Azure admin to upload your p12 file to Azure Secure Files if needed
+# Change "certSecureFile" field with p12 certificate name
+- task: InstallAppleCertificate@2
+  displayName: 'iOS Apple certificate installation'
   inputs:
-    actions: 'archive'
-    scheme: $(buildScheme)
-    sdk: $(buildSdk)
-    configuration: $(buildConfiguration)
+    certSecureFile: 'distribution.p12'
+    certPwd: '$(Cert.p12)'
+    keychain: 'temp'
+
+# Contact Azure admin to upload your mobileprovision file to Azure Secure Files if needed
+# Change "provProfileSecureFile" field with mobileprovision name
+- task: InstallAppleProvisioningProfile@1
+  displayName: 'iOS Apple provisioning profile installation'
+  inputs:
+    provisioningProfileLocation: 'secureFiles'
+    provProfileSecureFile: 'adhocmobileprovision.p12'
+
+# Change xcWorkspacePath with project workspace path
+# Change scheme with project scheme
+# Change xcodeVersion if needed
+- task: Xcode@5
+  displayName: 'iOS Xcode build'
+  inputs:
+    actions: 'clean build'
+    configuration: 'Release'
+    sdk: 'iphoneos'
     xcWorkspacePath: $(workspacePath)
+    scheme: 'AzureOrnek'
     xcodeVersion: $(xcodeVer)
     packageApp: true
-    archivePath: '$(Build.ArtifactStagingDirectory)/$(buildScheme).xcarchive'
+    signingOption: 'manual'
+    signingIdentity: '$(APPLE_CERTIFICATE_SIGNING_IDENTITY)'
+    provisioningProfileUuid: '$(APPLE_PROV_PROFILE_UUID)'
+
+- task: CopyFiles@2
+  displayName: 'iOS copy ipa file to upload'
+  inputs:
+    SourceFolder: '$(system.defaultworkingdirectory)'
+    Contents: '**/*.ipa'
+    TargetFolder: '$(build.artifactStagingDirectory)'
+    OverWrite: true
+    flattenFolders: true
+  condition: succeededOrFailed()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'iOS publish ipa to artifacts'
+  inputs:
+    PathtoPublish: '$(build.artifactStagingDirectory)'
+  condition: succeededOrFailed()
+
+- task: AppCenterDistribute@3
+  displayName: 'iOS AppCenter distribution'
+  inputs:
+   serverEndpoint: 'AzureDevOps'
+   appSlug: 'AppSlupFromAppCenter'
+   appFile: '$(build.ArtifactStagingDirectory)/*.ipa'
+   symbolsIncludeParentDirectory: false
+   releaseNotesOption: 'input'
+   releaseNotesInput: '$(Build.SourceVersionMessage)'
+
