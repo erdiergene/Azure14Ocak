@@ -1,10 +1,13 @@
 
 variables:
+- group: MobileAppsVariableGroup
   buildScheme: 'Azure14Ocak'  # Uygulamanızın Xcode scheme'ini buraya girin.
   buildSdk: 'iphoneos'
   buildConfiguration: 'Release'
   workspacePath: '**/*.xcodeproj'  # Eğer bir workspace kullanıyorsanız, burayı ayarlayın.
   xcodeVer: 'default'  # Seçenekler: 8, 9, 10, 11, 12, default, specifyPath
+  
+  
 
 trigger:
   branches:
