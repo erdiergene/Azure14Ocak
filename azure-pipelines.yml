@@ -70,8 +70,8 @@ steps:
 - task: ms-vsclient.app-store.app-store-release.AppStoreRelease@1
   displayName: 'Publish to the App Store TestFlight track'
   inputs:
-    serviceEndpoint: 'App Store Connect'
-    appIdentifier: com.ergene.AzureOrnek
+    serviceEndpoint: 'App Store Connect 2'
+    appIdentifier: com.ergene.erdi.AzureOcak
     shouldSkipWaitingForProcessing: true
     shouldSkipSubmission: true
 
