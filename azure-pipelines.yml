@@ -1,19 +1,52 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+
+variables:
+  buildScheme: 'Azure14Ocak'  # Uygulamanızın Xcode scheme'ini buraya girin.
+  buildSdk: 'iphoneos'
+  buildConfiguration: 'Release'
+  workspacePath: '**/*.xcodeproj'  # Eğer bir workspace kullanıyorsanız, burayı ayarlayın.
+  xcodeVer: 'default'  # Seçenekler: 8, 9, 10, 11, 12, default, specifyPath
 
 trigger:
-- main
+  branches:
+    include:
+    - master
+    - main
+    - develop
+
+schedules:
+  - cron: "0 0 * * *"
+    displayName: Daily midnight build
+    branches:
+      include:
+      - master
+      - main
+      - develop
+    always: true
 
 pool:
-  vmImage: ubuntu-latest
+  name: 'Default'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- checkout: self
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+
+
+- task: Xcode@5
+  inputs:
+    actions: 'build'
+    scheme: $(buildScheme)
+    sdk: $(buildSdk)
+    configuration: $(buildConfiguration)
+    xcWorkspacePath: $(workspacePath)
+    xcodeVersion: $(xcodeVer)
+
+- task: Xcode@5
+  inputs:
+    actions: 'archive'
+    scheme: $(buildScheme)
+    sdk: $(buildSdk)
+    configuration: $(buildConfiguration)
+    xcWorkspacePath: $(workspacePath)
+    xcodeVersion: $(xcodeVer)
+    packageApp: true
+    archivePath: '$(Build.ArtifactStagingDirectory)/$(buildScheme).xcarchive'
