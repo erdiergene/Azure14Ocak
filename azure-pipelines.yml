@@ -54,7 +54,7 @@ steps:
   displayName: 'iOS Apple provisioning profile installation'
   inputs:
     provisioningProfileLocation: 'secureFiles'
-    provProfileSecureFile: 'adhocmobileprovision.p12'
+    provProfileSecureFile: 'adhoc.mobileprovision'
 
 # Change xcWorkspacePath with project workspace path
 # Change scheme with project scheme
