@@ -1,13 +1,5 @@
-
 variables:
 - group: MobileAppsVariableGroup
-  buildScheme: 'Azure14Ocak'  # Uygulamanızın Xcode scheme'ini buraya girin.
-  buildSdk: 'iphoneos'
-  buildConfiguration: 'Release'
-  workspacePath: '**/*.xcodeproj'  # Eğer bir workspace kullanıyorsanız, burayı ayarlayın.
-  xcodeVer: 'default'  # Seçenekler: 8, 9, 10, 11, 12, default, specifyPath
-  
-  
 
 trigger:
   branches:
@@ -32,45 +24,28 @@ pool:
 steps:
 - checkout: self
 
-
-#- task: swellaby.mirror-git-repository.mirror-git-repository-vsts-task.mirror-git-repository-vsts-task@1
-#  displayName: 'Mirror Git Repository to https://dev.azure.com/erdieergene/_git/Azure14Ocak'
-#  inputs:
-#    sourceGitRepositoryPersonalAccessToken: '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'
-#    sourceGitRepositoryCloneDirectoryName: master
-#    destinationGitRepositoryUri: 'https://dev.azure.com/erdieergene/_git/Azure14Ocak'
-#    destinationGitRepositoryPersonalAccessToken: 7q6srewoysy3mhez5owurmlmv7ti7koyxmcgpuju6deul2jqng6q
-
-
-# Contact Azure admin to upload your p12 file to Azure Secure Files if needed
-# Change "certSecureFile" field with p12 certificate name
 - task: InstallAppleCertificate@2
   displayName: 'iOS Apple certificate installation'
   inputs:
     certSecureFile: 'distribution.p12'
-    certPwd: '$(Cert.p12)'
-    keychain: 'temp'
+    certPwd: '$(p12Password)'
+    opensslPkcsArgs: '-legacy'
 
-# Contact Azure admin to upload your mobileprovision file to Azure Secure Files if needed
-# Change "provProfileSecureFile" field with mobileprovision name
 - task: InstallAppleProvisioningProfile@1
   displayName: 'iOS Apple provisioning profile installation'
   inputs:
     provisioningProfileLocation: 'secureFiles'
     provProfileSecureFile: 'adhoc.mobileprovision'
 
-# Change xcWorkspacePath with project workspace path
-# Change scheme with project scheme
-# Change xcodeVersion if needed
 - task: Xcode@5
   displayName: 'iOS Xcode build'
   inputs:
     actions: 'clean build'
     configuration: 'Release'
     sdk: 'iphoneos'
-    xcWorkspacePath: $(workspacePath)
-    scheme: 'AzureOrnek'
-    xcodeVersion: $(xcodeVer)
+    xcWorkspacePath: '**/*.xcodeproj'
+    scheme: 'Azure14Ocak'
+    xcodeVersion: 'default'
     packageApp: true
     signingOption: 'manual'
     signingIdentity: '$(APPLE_CERTIFICATE_SIGNING_IDENTITY)'
@@ -92,13 +67,12 @@ steps:
     PathtoPublish: '$(build.artifactStagingDirectory)'
   condition: succeededOrFailed()
 
-#- task: AppCenterDistribute@3
-#  displayName: 'iOS AppCenter distribution'
-#  inputs:
-#   serverEndpoint: 'AzureDevOps'
-#   appSlug: 'AppSlupFromAppCenter'
-#   appFile: '$(build.ArtifactStagingDirectory)/*.ipa'
-#   symbolsIncludeParentDirectory: false
-#   releaseNotesOption: 'input'
-#   releaseNotesInput: '$(Build.SourceVersionMessage)'
+- task: ms-vsclient.app-store.app-store-release.AppStoreRelease@1
+  displayName: 'Publish to the App Store TestFlight track'
+  inputs:
+    serviceEndpoint: 'App Store Connect'
+    appIdentifier: com.ergene.AzureOrnek
+    shouldSkipWaitingForProcessing: true
+    shouldSkipSubmission: true
+
 
